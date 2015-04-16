@@ -407,6 +407,7 @@ class AdvancedSettingsValidationTest(StudioCourseTest):
             if field not in expected_fields:
                 self.fail("Field '{}' not expected for Advanced Settings display.".format(field))
 
+
 @attr('shard_1')
 class ContentLicenseTest(StudioCourseTest):
     def setUp(self):
