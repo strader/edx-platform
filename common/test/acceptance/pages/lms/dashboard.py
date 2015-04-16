@@ -160,6 +160,11 @@ class DashboardPage(PageObject):
         # Clicking the submit-lang button does a jquery ajax post, so make sure that
         # has completed before continuing on.
         self.wait_for_ajax()
+
+        # wait for /i18n/setlang
+        self.wait_for_page()
+
+        # wait for redirect
         self.wait_for_page()
 
         self._changed_lang_promise(code).fulfill()
