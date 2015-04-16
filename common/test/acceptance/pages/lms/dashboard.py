@@ -160,12 +160,16 @@ class DashboardPage(PageObject):
         # Clicking the submit-lang button does a jquery ajax post, so make sure that
         # has completed before continuing on.
         self.wait_for_ajax()
+        self.wait_for_page()
 
         self._changed_lang_promise(code).fulfill()
 
     def _changed_lang_promise(self, code):
         def _check_func():
-            self.wait_for_element_presence(self.q(css='select[name="language"]'), 'wait for language selector to be present')
+            self.wait_for_element_presence(
+                self.q(css='select[name="language"]'),
+                'wait for language selector to be present'
+            )
             language_is_selected = self.q(css='select[name="language"] option[value="{}"]'.format(code)).selected
             modal_is_visible = self.q(css='section#change_language.modal').visible
             return (language_is_selected and not modal_is_visible)
