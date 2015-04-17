@@ -5,6 +5,7 @@ Student dashboard page.
 
 from bok_choy.page_object import PageObject
 from bok_choy.promise import EmptyPromise
+from ...tests.helpers import enable_animations, disable_animations
 from . import BASE_URL
 
 
@@ -153,6 +154,7 @@ class DashboardPage(PageObject):
         """
         Change the language on the dashboard to the language corresponding with `code`.
         """
+        disable_animations(self)
         self.q(css=".edit-language").first.click()
         self.q(css='select[name="language"] option[value="{}"]'.format(code)).first.click()
         self.q(css="#submit-lang").first.click()
@@ -161,20 +163,13 @@ class DashboardPage(PageObject):
         # has completed before continuing on.
         self.wait_for_ajax()
 
-        # wait for /i18n/setlang
-        self.wait_for_page()
-
-        # wait for redirect
         self.wait_for_page()
 
         self._changed_lang_promise(code).fulfill()
+        enable_animations(self)
 
     def _changed_lang_promise(self, code):
         def _check_func():
-            self.wait_for_element_presence(
-                self.q(css='select[name="language"]'),
-                'wait for language selector to be present'
-            )
             language_is_selected = self.q(css='select[name="language"] option[value="{}"]'.format(code)).selected
             modal_is_visible = self.q(css='section#change_language.modal').visible
             return (language_is_selected and not modal_is_visible)
