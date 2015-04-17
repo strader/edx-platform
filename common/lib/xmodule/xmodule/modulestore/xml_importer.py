@@ -419,7 +419,8 @@ class ImportManager(object):
                 dest_id, runtime = self.get_dest_id(courselike_key)
             except DuplicateCourseError:
                 continue
-            with self.store.bulk_operations(dest_id):
+            #with self.store.bulk_operations(dest_id):
+            if True:
                 source_courselike, courselike, data_path = self.get_courselike(courselike_key, runtime, dest_id)
                 # Import all static pieces.
                 self.import_static(data_path, dest_id)
@@ -770,7 +771,7 @@ def _import_course_draft(
         for child in module.get_children():
             _import_module(child)
 
-    # Now walk the /vertical directory.
+    # Now walk the /drafts directory.
     # Each file in the directory will be a draft copy of the vertical.
 
     # First it is necessary to order the draft items by their desired index in the child list,
