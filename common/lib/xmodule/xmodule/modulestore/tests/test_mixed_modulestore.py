@@ -669,6 +669,76 @@ class TestMixedModuleStore(CourseComparisonTest):
             self.assertTrue(self._has_changes(sequential.location))
             self.assertTrue(self._has_changes(vertical.location))
 
+    @ddt.data(ModuleStoreEnum.Type.mongo, ModuleStoreEnum.Type.split)
+    def test_vertical_with_draft_and_published_unit_has_changes_before_export_and_after_import(self, default_ms):
+        """
+        Tests that an published unit with an unpublished draft remains published across export and re-import.
+        """
+        with self._build_store(default_ms) as (contentstore, source_course_key):
+
+            # create chapter
+            chapter = self.store.create_child(
+                self.user_id, self.course.location, 'chapter', block_id='section_one'
+            )
+            self.store.publish(chapter.location, self.user_id)
+
+            # create sequential
+            sequential = self.store.create_child(
+                self.user_id, chapter.location, 'sequential', block_id='subsection_one'
+            )
+            self.store.publish(sequential.location, self.user_id)
+
+            # create vertical
+            vertical = self.store.create_child(
+                self.user_id, sequential.location, 'vertical', block_id='moon_unit'
+            )
+            # Vertical has changes until it is actually published.
+            self.assertTrue(self._has_changes(vertical.location))
+            self.store.publish(vertical.location, self.user_id)
+            self.assertFalse(self._has_changes(vertical.location))
+
+            # create unit
+            unit = self.store.create_child(
+                self.user_id, vertical.location, 'html', block_id='html_unit'
+            )
+            # Vertical has a new child -and- unit is unpublished. So both have changes.
+            self.assertTrue(self._has_changes(vertical.location))
+            self.assertTrue(self._has_changes(unit.location))
+
+            # Publishing the vertical also publishes its unit child.
+            self.store.publish(vertical.location, self.user_id)
+            self.assertFalse(self._has_changes(vertical.location))
+            self.assertFalse(self._has_changes(unit.location))
+
+            # Publishing the unit separately has no effect on whether it has changes - it's already published.
+            self.store.publish(unit.location, self.user_id)
+            self.assertFalse(self._has_changes(vertical.location))
+            self.assertFalse(self._has_changes(unit.location))
+
+            # Retrieve the published block and make sure it's published.
+            self.store.publish(chapter.location, self.user_id)
+            self.assertFalse(self._has_changes(chapter.location))
+            self.assertFalse(self._has_changes(sequential.location))
+            self.assertFalse(self._has_changes(vertical.location))
+            self.assertFalse(self._has_changes(unit.location))
+
+            # Now make changes to the unit - but don't publish them.
+            component = self.store.get_item(unit.location)
+            component.display_name = 'Changed Display Name'
+            component = self.store.update_item(component, self.user_id)
+            self.assertTrue(self._has_changes(component.location))
+
+            self._export_import_course_round_trip(
+                self.store, contentstore, source_course_key, self.export_dir
+            )
+
+            # Get the published xblock from the imported course.
+            # Verify that the published block still has a draft block, i.e. has changes.
+            self.assertTrue(self._has_changes(chapter.location))
+            self.assertTrue(self._has_changes(sequential.location))
+            self.assertTrue(self._has_changes(vertical.location))
+            self.assertTrue(self._has_changes(unit.location))
+
     def _has_changes(self, location):
         """
         Helper function that loads the item before calling has_changes
